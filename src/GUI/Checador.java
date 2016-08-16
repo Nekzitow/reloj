@@ -8,6 +8,7 @@ package GUI;
 import Clases.Conexion;
 import Clases.Controladores;
 import Clases.Empleado;
+import Clases.Horario;
 import Clases.UFMatcherClass;
 import Clases.UFScannerClass;
 import com.sun.jna.Native;
@@ -17,9 +18,13 @@ import com.sun.jna.ptr.PointerByReference;
 import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.Toolkit;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -38,6 +43,14 @@ import javax.swing.JOptionPane;
  */
 public class Checador extends javax.swing.JFrame {
 
+    /**
+     * Creamos el modelo
+     */
+    javax.swing.table.DefaultTableModel Modelo = new javax.swing.table.DefaultTableModel() {
+        public boolean isCellEditable(int fil, int col) {
+            return false;
+        }
+    };
     private static int BUFFER_SIZE = 10000000;
     private static final long serialVersionUID = 1L;
     private int nScannerNumber = 0;
@@ -87,6 +100,22 @@ public class Checador extends javax.swing.JFrame {
         relo.start();
         iniciarLector();
         setStatusMsg("FAVOR INGRESE SU HUELLA");
+        Thread hilo2 = hiloChecador();
+        hilo2.start();
+        this.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                //Cuando cierra el frame quitamos el lector
+                unInit();
+            }
+        });
+        setModeloP();
+    }
+
+    public void setModeloP() {
+        jTable1.setModel(Modelo);
+        Modelo.addColumn("HORA");
+        Modelo.addColumn("OBSERVACIÓN");
+        jTable1.getTableHeader().setReorderingAllowed(false);
     }
 
     public void iniciarLector() {
@@ -255,7 +284,7 @@ public class Checador extends javax.swing.JFrame {
 
         IntByReference pValue = new IntByReference();
 
-        pValue.setValue(2000);
+        pValue.setValue(1000);
 
         int nRes = libScanner.UFS_SetParameter(hScanner, libScanner.UFS_PARAM_TIMEOUT, pValue);
         if (nRes == 0) {
@@ -382,23 +411,8 @@ public class Checador extends javax.swing.JFrame {
         public int callback(Pointer hScanner, int bFingerOn, Pointer pImage, int nWidth, int nHeight, int nResolution, PointerByReference pParam) {
             nC++;
 
-            /*
-			System.out.println(nC+"==========================================");  //
-			System.out.println("==>captureProc calle scanner:"+hScanner);  //  
-			System.out.println(" fingerOn:"+bFingerOn);  //  
-			System.out.println("width: "+nWidth);
-			System.out.println("height: "+nHeight);
-			System.out.println("resolution: "+nResolution);
-			System.out.println("void * pParam  value is "+pParam.getValue());
-			System.out.println(nC+"==========================================");  //
-             */
             drawCurrentFingerImage();
 
-            /*
-			jFingerInfo.setText("");
-			jFingerInfo.setText("width:"+nWidth + " height:"+nHeight+" resolution:"+nResolution);
-             */
-            //MsgBox("call"+nC); //exception error==> SDK work thread(UFS_Capture_Thread) while loop �� try ,catch  
             return 1;
 
         }
@@ -466,7 +480,7 @@ public class Checador extends javax.swing.JFrame {
                     SimpleDateFormat fech = new SimpleDateFormat("dd MMM yyyy");
                     String dateHoy = fech.format(now);
                     //LocalDate date = LocalDate.now();
-                    SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss a");                    
+                    SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss a");
                     String s = df.format(now);
                     lbFecha.setText(dateHoy.toUpperCase());
                     lbHora.setText(s);
@@ -482,6 +496,11 @@ public class Checador extends javax.swing.JFrame {
         return reloj;
     }
 
+    /**
+     * Inicializa el JLabel con la clase para pintar imagen
+     *
+     * @return
+     */
     private imagePanel getImagePanel() {
         if (imgPanel == null) {
             imgPanel = new imagePanel();
@@ -492,33 +511,65 @@ public class Checador extends javax.swing.JFrame {
         return imgPanel;
     }
 
+    /**
+     * Clase para pintar la imagen obtenida del lector esta hereda una super
+     * clase JLabel
+     */
     class imagePanel extends JLabel {
-        //private PlanarImage image;
 
+        //private PlanarImage image;
         private BufferedImage buffImage = null;
 
+        /**
+         * Pinta el dedo capturado en el JLabel desde canvas
+         *
+         * @param nWidth ancho original de la imagen
+         * @param nHeight alto original de la imagen
+         * @param buff bytes del la imagen obtenida
+         */
         private void drawFingerImage(int nWidth, int nHeight, byte[] buff) {
             buffImage = new BufferedImage(nWidth, nHeight, BufferedImage.TYPE_BYTE_GRAY);
             buffImage.getRaster().setDataElements(0, 0, nWidth, nHeight, buff);
             Graphics g = buffImage.createGraphics();
-            
-            //g.drawImage(buffImage, 0, 0, 130, 140, null);
             g.dispose();
             repaint();
         }
 
+        /**
+         * Sirve para poner tranparente el JLabel en el caso que no tenga datos
+         */
+        private void drawBlank() {
+            buffImage = new BufferedImage(210, 200, BufferedImage.TRANSLUCENT);
+            repaint();
+        }
+
+        /**
+         * pinta la imagen circular
+         *
+         * @param g
+         */
         public void paintComponent(Graphics g) {
-            g.setClip(new java.awt.geom.Ellipse2D.Float(0f,0f, 210,200));
-            g.drawImage(buffImage, 0, 0,210, 200, this);
+            g.setClip(new java.awt.geom.Ellipse2D.Float(0f, 0f, 210, 200));
+            g.drawImage(buffImage, 0, 0, 210, 200, this);
 
         }
     }
 
+    /**
+     * Muetra mensaje en pantalla
+     *
+     * @param log
+     */
     public void setStatusMsg(String log) {
         mensajes.setText("");
         mensajes.setText(log);
     }
 
+    /**
+     * Manda modal de informacion pantalla
+     *
+     * @param log
+     */
     public void MsgBox(String log) {
         JOptionPane.showMessageDialog(null, log);
     }
@@ -539,7 +590,6 @@ public class Checador extends javax.swing.JFrame {
         mensajes = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
         jLabel5 = new javax.swing.JLabel();
-        jButton1 = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTable1 = new javax.swing.JTable();
         jLabel1 = new javax.swing.JLabel();
@@ -548,15 +598,15 @@ public class Checador extends javax.swing.JFrame {
         setPreferredSize(Toolkit.getDefaultToolkit().getScreenSize());
         getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        lbHora.setFont(new java.awt.Font("Arial", 1, 60)); // NOI18N
+        lbHora.setFont(new java.awt.Font("Arial", 1, 65)); // NOI18N
         lbHora.setForeground(new java.awt.Color(8, 85, 163));
         lbHora.setText("jLabel2");
-        getContentPane().add(lbHora, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 130, 430, 70));
+        getContentPane().add(lbHora, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 130, 430, 80));
 
-        lbFecha.setFont(new java.awt.Font("Arial", 1, 36)); // NOI18N
+        lbFecha.setFont(new java.awt.Font("Arial", 1, 48)); // NOI18N
         lbFecha.setForeground(new java.awt.Color(8, 85, 163));
         lbFecha.setText("jLabel3");
-        getContentPane().add(lbFecha, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 200, 320, 40));
+        getContentPane().add(lbFecha, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 200, 320, 60));
 
         jLabel4.setFont(new java.awt.Font("Arial", 1, 30)); // NOI18N
         jLabel4.setForeground(new java.awt.Color(8, 85, 163));
@@ -580,14 +630,6 @@ public class Checador extends javax.swing.JFrame {
         jLabel5.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         getContentPane().add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 470, 1030, 50));
 
-        jButton1.setText("Checar");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
-            }
-        });
-        getContentPane().add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(660, 170, -1, -1));
-
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null},
@@ -610,7 +652,13 @@ public class Checador extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-
+    /**
+     * Inicia el arreglo de Bytes
+     *
+     *
+     * @param nArrayCnt el numero de posicion
+     * @param nMaxTemplateSize numero maximo del arreglo para bytes
+     */
     public void initArray(int nArrayCnt, int nMaxTemplateSize) {
         if (byteTemplateArray != null) {
             byteTemplateArray = null;
@@ -629,124 +677,201 @@ public class Checador extends javax.swing.JFrame {
         refTemplateArray = new PointerByReference();
 
     }
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        if (nInitFlag == 0) {
-            MsgBox("Lector no inicado!");
-            return;
-        }
 
-        Pointer hScanner = null;
+    /**
+     * Método
+     *
+     * @return Thread
+     */
+    public Thread hiloChecador() {
+        Thread reloj = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    if (nInitFlag == 0) {
+                        MsgBox("Lector no inicado!");
+                        return;
+                    }
 
-        hScanner = GetCurrentScannerHandle();
+                    Pointer hScanner = null;
 
-        if (hScanner != null) {
+                    hScanner = GetCurrentScannerHandle();
 
-            int nRes = libScanner.UFS_ClearCaptureImageBuffer(hScanner);
+                    if (hScanner != null) {
 
-            setStatusMsg("desplace su dedo");
+                        int nRes = libScanner.UFS_ClearCaptureImageBuffer(hScanner);
 
-            nRes = libScanner.UFS_CaptureSingleImage(hScanner);
+                        setStatusMsg("COLOCAR SU DEDO EN EL LECTOR");
 
-            setStatusMsg("capturar imagen simple");
+                        nRes = libScanner.UFS_CaptureSingleImage(hScanner);
+                        if (nRes == 0) {
 
-            if (nRes == 0) {
+                            byte[] bTemplate = new byte[512];
 
-                byte[] bTemplate = new byte[512];
+                            IntByReference refTemplateSize = new IntByReference();
 
-                IntByReference refTemplateSize = new IntByReference();
+                            IntByReference refTemplateQuality = new IntByReference();
 
-                IntByReference refTemplateQuality = new IntByReference();
-
-                IntByReference refVerify = new IntByReference();
-                try {
-                    nRes = libScanner.UFS_Extract(hScanner, bTemplate, refTemplateSize, refTemplateQuality);
-
-                    if (nRes == 0) {
-
-                        setStatusMsg("save template file template size:" + refTemplateSize.getValue() + " quality:" + refTemplateQuality.getValue());
-
-                        /*if (nTemplateCnt > 99) {
-                            setStatusMsg("template queue full!! limited 100 template, now " + nTemplateCnt);
-                            MsgBox("template queue full!! limited 100 template, now " + nTemplateCnt);
-                            return;
-                        }*/
-                        int tempsize = refTemplateSize.getValue();
-
-                        System.arraycopy(bTemplate, 0, byteTemplateArray[0], 0, refTemplateSize.getValue());//byte[][]
-
-                        intTemplateSizeArray[0] = refTemplateSize.getValue();
-                        //se compara la huella
-                        ArrayList<Empleado> empleado = Empleado.listaEmpleados(con, 1);
-                        boolean find = false;
-                        for (Empleado emp : empleado) {
+                            IntByReference refVerify = new IntByReference();
                             try {
-                                nRes = libMatcher.UFM_Verify(hMatcher, bTemplate, refTemplateSize.getValue(),emp.getHuellaDigital(), emp.getTemplateSize(), refVerify);//byte[][]
-                                if (nRes == 0) {
-                                    if (refVerify.getValue() == 1) {
-                                        //setStatusMsg("verify success!! enroll_id: " + (nSelectedIdx + 1));
-                                        //MsgBox("verify success!! enroll_id: " + (nSelectedIdx + 1));
-                                        jLabel4.setText("");
-                                        jLabel4.setText(emp.getNombre().toUpperCase()+" "+emp.getApellidos().toUpperCase());
-                                        mensajes.setForeground(new java.awt.Color(94, 173, 56));
-                                        setStatusMsg("Correcto");
-                                        jLabel3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Resources/img/palomita.png")));                                        
-                                        find = true;
-                                        break;
-                                    } else {
-                                       //NO COINCIDE PARA EL PERSONAL
-                                       find  = false;
-                                    }
-                                } else {
-                                    //setStatusMsg("verify fail!! " + nRes);
+                                nRes = libScanner.UFS_Extract(hScanner, bTemplate, refTemplateSize, refTemplateQuality);
 
-                                    byte[] refErr = new byte[512];
-                                    nRes = libMatcher.UFM_GetErrorString(nRes, refErr);
-                                    if (nRes == 0) {
-                                        //setStatusMsg("==>UFM_GetErrorString err is " + Native.toString(refErr));
-                                        //MsgBox("==>UFM_GetErrorString err is " + Native.toString(refErr));
+                                if (nRes == 0) {
+                                    setStatusMsg("save template file template size:" + refTemplateSize.getValue() + " quality:" + refTemplateQuality.getValue());
+                                    int tempsize = refTemplateSize.getValue();
+                                    System.arraycopy(bTemplate, 0, byteTemplateArray[0], 0, refTemplateSize.getValue());//byte[][]
+                                    intTemplateSizeArray[0] = refTemplateSize.getValue();
+                                    //se compara la huella
+                                    ArrayList<Empleado> empleado = Empleado.listaEmpleados(con, 1);
+                                    boolean find = false;
+                                    for (Empleado emp : empleado) {
+                                        try {
+                                            nRes = libMatcher.UFM_Verify(hMatcher, bTemplate, refTemplateSize.getValue(), emp.getHuellaDigital(), emp.getTemplateSize(), refVerify);//byte[][]
+                                            if (nRes == 0) {
+                                                if (refVerify.getValue() == 1) {
+                                                    ArrayList<Horario> horario = Horario.horarioDia(con, emp.getId());
+                                                    validarHora(horario);
+                                                    jLabel4.setText("");
+                                                    jLabel4.setText(emp.getNombre().toUpperCase() + " " + emp.getApellidos().toUpperCase());
+                                                    mensajes.setForeground(new java.awt.Color(94, 173, 56));
+                                                    setStatusMsg("Correcto");
+                                                    jLabel3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Resources/img/palomita.png")));
+                                                    find = true;
+                                                    break;
+                                                } else {
+                                                    //NO COINCIDE PARA EL PERSONAL
+                                                    find = false;
+                                                }
+                                            } else {
+                                                //setStatusMsg("verify fail!! " + nRes);
+
+                                                byte[] refErr = new byte[512];
+                                                nRes = libMatcher.UFM_GetErrorString(nRes, refErr);
+                                                if (nRes == 0) {
+                                                    //setStatusMsg("==>UFM_GetErrorString err is " + Native.toString(refErr));
+                                                    //MsgBox("==>UFM_GetErrorString err is " + Native.toString(refErr));
+                                                }
+
+                                            }
+                                        } catch (Exception ex) {
+
+                                        }
                                     }
+                                    if (!find) {
+                                        mensajes.setForeground(Color.red);
+                                        setStatusMsg("Huella no registrada");
+                                        jLabel3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Resources/img/tacha.png")));
+
+                                    }
+                                    //nRes = libMatcher.UFM_Verify(hMatcher, bTemplate, refTemplateSize.getValue(), byteTemplateArray[nSelectedIdx], intTemplateSizeArray[nSelectedIdx], refVerify);//byte[][]
+                                    //setStatusMsg("eroll template array idx:" + nTemplateCnt + " template size:" + intTemplateSizeArray[nTemplateCnt]);
+                                    //setStatusMsg("Huella tomada");
+                                    nTemplateCnt++;
+                                    //se pinta la huella en el jpanel
+                                    drawCurrentFingerImage();
+                                    try {
+                                        Thread.sleep(3000);
+                                    } catch (InterruptedException e) {
+
+                                    }
+                                    jLabel4.setText("");
+                                    int rows = jTable1.getRowCount();
+                                    for (int i = rows-1; i >=0; i--) {
+                                        Modelo.removeRow(i);
+                                    }
+                                    mensajes.setForeground(new java.awt.Color(94, 173, 56));
+                                    setStatusMsg("COLOCAR SU DEDO EN EL LECTOR");
+                                    jLabel3.setIcon(null);
+                                    jLabel3.revalidate();
+                                    imgPanel.drawBlank();
+                                    nCaptureFlag = 1;
+
+                                } else {
 
                                 }
                             } catch (Exception ex) {
 
+                                MsgBox("exception err:" + ex.getMessage());
                             }
+                        } else {
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException e) {
+
+                            }
+                            //jLabel3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Resources/img/tacha.png")));
                         }
-                        if (!find) {
-                            mensajes.setForeground(Color.red);
-                            setStatusMsg("Huella no registrada");
-                            jLabel3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Resources/img/tacha.png")));                                        
-                        }
-                        //nRes = libMatcher.UFM_Verify(hMatcher, bTemplate, refTemplateSize.getValue(), byteTemplateArray[nSelectedIdx], intTemplateSizeArray[nSelectedIdx], refVerify);//byte[][]
-                        //setStatusMsg("eroll template array idx:" + nTemplateCnt + " template size:" + intTemplateSizeArray[nTemplateCnt]);
-                        //setStatusMsg("Huella tomada");
-                        nTemplateCnt++;
-                        //se pinta la huella en el jpanel
-                        drawCurrentFingerImage();
-                        nCaptureFlag = 1;
 
                     } else {
-
+                        // scanner pointer  null	
                     }
-                } catch (Exception ex) {
 
-                    MsgBox("exception err:" + ex.getMessage());
                 }
-            }else{
-                
-                jLabel3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Resources/img/tacha.png")));                                        
             }
+        });
 
-        } else {
-            // scanner pointer  null	
+        return reloj;
+    }
+
+    public void validarHora(ArrayList<Horario> horas) {
+        try {
+            Date now = new Date();
+            SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
+            //obtenemos la hora de chequeo
+            String s = df.format(now);
+            //Realizamos la validacion
+            Date comparar1, comparar2, comparar3;
+            //hora actual
+            comparar1 = df.parse(s);
+            boolean valor = false;
+            for (Horario hora : horas) {
+                //hora1
+                comparar2 = df.parse(hora.getHoraEntrada());
+                //hora2
+                comparar3 = df.parse(hora.getHoraSalida());
+                if (evaluarLimite(comparar1, comparar2, hora.getTiempoAntes()*60)) {
+                    System.out.println("Fecha en el rango");
+                    valor = true;
+                    break;
+                } else {
+                    if (evaluarLimite(comparar1, comparar3, hora.getTiempoDespues()*60)) {
+                        valor = true;
+                        break;
+                    } else {
+                        valor = false;
+                    }
+                    
+                }
+                
+            }
+            if (valor) {
+                Modelo.addRow(new Object[]{s,"A TIEMPO"});
+            } else {
+                Modelo.addRow(new Object[]{s,"FUERA DE TIEMPO"});
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-    }//GEN-LAST:event_jButton1ActionPerformed
-    
-    public int exitOnclose(){
-        
-        
+
+    }
+
+    public static boolean evaluarLimite(Date date1, Date date2, int tiempo) {
+        boolean correcto = false;
+        long diferencia = (Math.abs(date1.getTime() - date2.getTime())) / 1000;
+        long limit = (tiempo * 1000) / 1000L;//limite de tiempo
+        if (diferencia <= limit) {
+            correcto = true;
+        }
+        return correcto;
+    }
+
+    public int exitOnclose() {
         return javax.swing.WindowConstants.EXIT_ON_CLOSE;
     }
-    
+
+    /**
+     * Metodo que desinicializa el lecto
+     */
     public void unInit() {
         System.out.println("actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
 
@@ -755,17 +880,15 @@ public class Checador extends javax.swing.JFrame {
         if (nRes == 0) {
 
             //setStatusMsg("UFS_Uninit sucess!!");
-
             nRes = libMatcher.UFM_Delete(hMatcher);
 
             nInitFlag = 0;
 
-            //MsgBox("UFS_Uninit success!");
-
         } else {
-            //setStatusMsg("UFS_Uninit fail!!");
+            setStatusMsg("No se puedo quitar el lector");
         }
     }
+
     /**
      * @param args the command line arguments
      */
@@ -802,7 +925,6 @@ public class Checador extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;

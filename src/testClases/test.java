@@ -9,18 +9,21 @@ import Clases.Conexion;
 import Clases.Empleado;
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Calendar;
 
 /**
  *
  * @author OSORIO
  */
 public class test {
-    
-    public static void main(String[] args){
+
+    public static void main(String[] args) {
         Connection con = Conexion.conecta();
-        ArrayList<Empleado> empleados = Empleado.listaEmpleados(con, 1);
+       
+        
+        /*ArrayList<Empleado> empleados = Empleado.listaEmpleados(con, 1);
         for (Empleado empleado : empleados) {
             System.out.println(empleado.getNombre()+" "+empleado.getApellidos());
-        }
+        }*/
     }
 }
