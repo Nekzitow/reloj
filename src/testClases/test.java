@@ -8,8 +8,11 @@ package testClases;
 import Clases.Conexion;
 import Clases.Empleado;
 import java.sql.Connection;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -20,7 +23,11 @@ public class test {
     public static void main(String[] args) {
         Connection con = Conexion.conecta();
        
-        
+        Date now = new Date();
+            SimpleDateFormat fech = new SimpleDateFormat("yyyy-MM-dd");
+            String dateHoy = fech.format(now);
+            dateHoy = dateHoy + "%";
+            JOptionPane.showMessageDialog(null, dateHoy);
         /*ArrayList<Empleado> empleados = Empleado.listaEmpleados(con, 1);
         for (Empleado empleado : empleados) {
             System.out.println(empleado.getNombre()+" "+empleado.getApellidos());

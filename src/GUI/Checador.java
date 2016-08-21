@@ -11,6 +11,7 @@ import Clases.Empleado;
 import Clases.Horario;
 import Clases.UFMatcherClass;
 import Clases.UFScannerClass;
+import Clases.Utils;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.IntByReference;
@@ -701,7 +702,7 @@ public class Checador extends javax.swing.JFrame {
 
                         int nRes = libScanner.UFS_ClearCaptureImageBuffer(hScanner);
 
-                        setStatusMsg("COLOCAR SU DEDO EN EL LECTOR");
+                        setStatusMsg("COLOQUE SU DEDO EN EL LECTOR");
 
                         nRes = libScanner.UFS_CaptureSingleImage(hScanner);
                         if (nRes == 0) {
@@ -730,11 +731,20 @@ public class Checador extends javax.swing.JFrame {
                                             if (nRes == 0) {
                                                 if (refVerify.getValue() == 1) {
                                                     ArrayList<Horario> horario = Horario.horarioDia(con, emp.getId());
-                                                    validarHora(horario);
-                                                    jLabel4.setText("");
-                                                    jLabel4.setText(emp.getNombre().toUpperCase() + " " + emp.getApellidos().toUpperCase());
-                                                    mensajes.setForeground(new java.awt.Color(94, 173, 56));
-                                                    setStatusMsg("Correcto");
+                                                    if (horario.size() > 0) {
+                                                        validarHora(horario, emp.getId());
+                                                        jLabel4.setText("");
+                                                        jLabel4.setText(emp.getNombre().toUpperCase() + " " + emp.getApellidos().toUpperCase());
+                                                        mensajes.setForeground(new java.awt.Color(94, 173, 56));
+                                                        setStatusMsg("Correcto");
+                                                    } else {
+                                                        jLabel4.setText("");
+                                                        jLabel4.setText(emp.getNombre().toUpperCase() + " " + emp.getApellidos().toUpperCase());
+                                                        mensajes.setForeground(new java.awt.Color(94, 173, 56));
+                                                        setStatusMsg("NO CUENTAS CON UNA HORARIO ASIGNADO");
+                                                    }
+                                                    
+                                                    
                                                     jLabel3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Resources/img/palomita.png")));
                                                     find = true;
                                                     break;
@@ -770,17 +780,17 @@ public class Checador extends javax.swing.JFrame {
                                     //se pinta la huella en el jpanel
                                     drawCurrentFingerImage();
                                     try {
-                                        Thread.sleep(3000);
+                                        Thread.sleep(2000);
                                     } catch (InterruptedException e) {
 
                                     }
                                     jLabel4.setText("");
                                     int rows = jTable1.getRowCount();
-                                    for (int i = rows-1; i >=0; i--) {
+                                    for (int i = rows - 1; i >= 0; i--) {
                                         Modelo.removeRow(i);
                                     }
                                     mensajes.setForeground(new java.awt.Color(94, 173, 56));
-                                    setStatusMsg("COLOCAR SU DEDO EN EL LECTOR");
+                                    setStatusMsg("COLOQUE SU DEDO EN EL LECTOR");
                                     jLabel3.setIcon(null);
                                     jLabel3.revalidate();
                                     imgPanel.drawBlank();
@@ -813,7 +823,7 @@ public class Checador extends javax.swing.JFrame {
         return reloj;
     }
 
-    public void validarHora(ArrayList<Horario> horas) {
+    public void validarHora(ArrayList<Horario> horas, int idEmpleado) {
         try {
             Date now = new Date();
             SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
@@ -829,40 +839,32 @@ public class Checador extends javax.swing.JFrame {
                 comparar2 = df.parse(hora.getHoraEntrada());
                 //hora2
                 comparar3 = df.parse(hora.getHoraSalida());
-                if (evaluarLimite(comparar1, comparar2, hora.getTiempoAntes()*60)) {
-                    System.out.println("Fecha en el rango");
-                    valor = true;
-                    break;
-                } else {
-                    if (evaluarLimite(comparar1, comparar3, hora.getTiempoDespues()*60)) {
-                        valor = true;
+                int response = Utils.comparaHorario(comparar2, comparar3);
+                switch (response) {
+                    case 0:
+                        valor = Utils.evaluarDesayuno(this.con, comparar1, comparar2, comparar3, hora, idEmpleado, s);
                         break;
-                    } else {
-                        valor = false;
-                    }
-                    
+                    case 1:
+                        valor = Utils.evaluarDocente(this.con, comparar1, comparar2, comparar3, hora, idEmpleado, s);
+                        break;
+                    default:
+                        valor = Utils.evaluarAdmon(this.con, comparar1, comparar2, comparar3, hora, idEmpleado, s);
+                        break;
                 }
-                
+                if (valor) {
+                    break;
+                }
+
             }
             if (valor) {
-                Modelo.addRow(new Object[]{s,"A TIEMPO"});
+                Modelo.addRow(new Object[]{s, "A TIEMPO"});
             } else {
-                Modelo.addRow(new Object[]{s,"FUERA DE TIEMPO"});
+                Modelo.addRow(new Object[]{s, "FUERA DE TIEMPO"});
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-    }
-
-    public static boolean evaluarLimite(Date date1, Date date2, int tiempo) {
-        boolean correcto = false;
-        long diferencia = (Math.abs(date1.getTime() - date2.getTime())) / 1000;
-        long limit = (tiempo * 1000) / 1000L;//limite de tiempo
-        if (diferencia <= limit) {
-            correcto = true;
-        }
-        return correcto;
     }
 
     public int exitOnclose() {
@@ -885,7 +887,7 @@ public class Checador extends javax.swing.JFrame {
             nInitFlag = 0;
 
         } else {
-            setStatusMsg("No se puedo quitar el lector");
+            setStatusMsg("No se pudo quitar el lector");
         }
     }
 

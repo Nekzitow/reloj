@@ -28,6 +28,8 @@ import java.util.ArrayList;
 import javax.imageio.ImageIO;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.event.InternalFrameEvent;
+import javax.swing.event.InternalFrameListener;
 
 /**
  *
@@ -87,6 +89,42 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
         llenarCampos();
         disableButtons();
         iniciarLector();
+        this.addInternalFrameListener(new InternalFrameListener() {
+            @Override
+            public void internalFrameOpened(InternalFrameEvent e) {
+                
+            }
+
+            @Override
+            public void internalFrameClosing(InternalFrameEvent e) {
+                unInit();
+            }
+
+            @Override
+            public void internalFrameClosed(InternalFrameEvent e) {
+                unInit();
+            }
+
+            @Override
+            public void internalFrameIconified(InternalFrameEvent e) {
+                
+            }
+
+            @Override
+            public void internalFrameDeiconified(InternalFrameEvent e) {
+                
+            }
+
+            @Override
+            public void internalFrameActivated(InternalFrameEvent e) {
+                
+            }
+
+            @Override
+            public void internalFrameDeactivated(InternalFrameEvent e) {
+                
+            }
+        });
     }
 
     public void iniciarLector() {
@@ -823,7 +861,6 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
         }
 
     }
-
     public int testCallScanProcCallback() {
         int nRes = 0;
 
@@ -939,17 +976,10 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
         int nRes = libScanner.UFS_Uninit();
 
         if (nRes == 0) {
-
-            //setStatusMsg("UFS_Uninit sucess!!");
-
             nRes = libMatcher.UFM_Delete(hMatcher);
-
             nInitFlag = 0;
-
-            //MsgBox("UFS_Uninit success!");
-
         } else {
-            //setStatusMsg("UFS_Uninit fail!!");
+            MsgBox("Error al !!");
         }
     }
     
