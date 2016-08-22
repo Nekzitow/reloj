@@ -32,19 +32,25 @@ public class Utils {
         boolean valor = false;
         if (evaluarLimite(comparar1, comparar2, hora.getTiempoAntes() * 60) || evaluarLimite2(comparar1, comparar2)) {
             System.out.println("Fecha en el rango");
-            if (evaluarLimite2(comparar1, comparar2)) {
-                //se guarda como retardo
-                JOptionPane.showMessageDialog(null, "SE GUARDARA COMO RETARDO");
-                Horario.checkAsistencia(con, idEmpleado, 1, hora.getIdAsignacion(), horario, 1);
-                valor = false;
-            } else {
-                //se hace el guardado 
-                Horario.checkAsistencia(con, idEmpleado, 1, hora.getIdAsignacion(), horario, 2);
-                valor = true;
+            //hacemos la comparacion de si el usuario ya checo con anterioridad, en el caso que sea cierto se mandara un mensaje en pantalla
+            if (Horario.checkChequeo(con, idEmpleado, hora.getIdAsignacion(), 3)) {
+               JOptionPane.showMessageDialog(null, "YA TIENE UN REGISTRO PARA ESTE HORARIO");
+               valor = false;
+            }else{
+                if (evaluarLimite2(comparar1, comparar2)) {
+                    //se guarda como retardo
+                    JOptionPane.showMessageDialog(null, "SE GUARDARA COMO RETARDO");
+                    Horario.checkAsistencia(con, idEmpleado, 1, hora.getIdAsignacion(), horario, 1, 3);
+                    valor = false;
+                } else {
+                    //se hace el guardado 
+                    Horario.checkAsistencia(con, idEmpleado, 1, hora.getIdAsignacion(), horario, 2, 3);
+                    valor = true;
+                }
             }
 
         } else if (evaluarLimite(comparar1, comparar3, hora.getTiempoDespues() * 60)) {
-            Horario.checkAsistencia(con, idEmpleado, 2, hora.getIdAsignacion(), horario, 2);
+            Horario.checkAsistencia(con, idEmpleado, 2, hora.getIdAsignacion(), horario, 2, 3);
             valor = true;
         } else {
             valor = false;
@@ -56,10 +62,10 @@ public class Utils {
             Date comparar2, Date comparar3, Horario hora, int idEmpleado, String horario) {
         boolean valor = false;
         if (evaluarLimite(comparar1, comparar2, hora.getTiempoAntes() * 60)) {
-            Horario.checkAsistencia(con, idEmpleado, 1, hora.getIdAsignacion(), horario, 2);
+            Horario.checkAsistencia(con, idEmpleado, 1, hora.getIdAsignacion(), horario, 2, 1);
             valor = true;
         } else if (evaluarLimite(comparar1, comparar3, hora.getTiempoDespues() * 60)) {
-            Horario.checkAsistencia(con, idEmpleado, 2, hora.getIdAsignacion(), horario, 2);
+            Horario.checkAsistencia(con, idEmpleado, 2, hora.getIdAsignacion(), horario, 2, 1);
             valor = true;
         } else {
             valor = false;
@@ -70,16 +76,23 @@ public class Utils {
     public static boolean evaluarDesayuno(Connection con, Date comparar1,
             Date comparar2, Date comparar3, Horario hora, int idEmpleado, String horario) {
         boolean valor = false;
-        if (evaluarLimite(comparar1, comparar2, hora.getTiempoAntes() * 60)) {
-            //hacemos la insercion
-            Horario.checkAsistencia(con, idEmpleado, 1, hora.getIdAsignacion(), horario, 2);
-            valor = true;
-        } else if (evaluarLimite(comparar1, comparar3, hora.getTiempoDespues() * 60)) {
-            Horario.checkAsistencia(con, idEmpleado, 2, hora.getIdAsignacion(), horario, 2);
-            valor = true;
-        } else {
-            valor = false;
-        }
+        
+                if (evaluarLimite(comparar1, comparar2, hora.getTiempoAntes() * 60)) {
+                    //hacemos la insercion
+                    if (Horario.checkChequeo(con, idEmpleado, hora.getIdAsignacion(), 2)) {
+                        JOptionPane.showMessageDialog(null, "YA TIENE UN REGISTRO PARA ESTE HORARIO");
+                        valor = false;
+                     }else{
+                        Horario.checkAsistencia(con, idEmpleado, 1, hora.getIdAsignacion(), horario, 2, 2);
+                        valor = true;
+                    }
+                } else if (evaluarLimite(comparar1, comparar3, hora.getTiempoDespues() * 60)) {
+                    Horario.checkAsistencia(con, idEmpleado, 2, hora.getIdAsignacion(), horario, 2, 2);
+                    valor = true;
+                } else {
+                    valor = false;
+                }
+        
         return valor;
     }
 

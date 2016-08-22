@@ -40,8 +40,8 @@ public class Horario {
         this.idAsignacion = 0;
     }
 
-    public Horario(int id, String horaEntrada, String horaSalida, int dia, 
-            int idTipo, int tiempoAntes, int tiempoDespues,int idAsignacion) {
+    public Horario(int id, String horaEntrada, String horaSalida, int dia,
+            int idTipo, int tiempoAntes, int tiempoDespues, int idAsignacion) {
         this.id = id;
         this.horaEntrada = horaEntrada;
         this.horaSalida = horaSalida;
@@ -189,8 +189,8 @@ public class Horario {
     }
 
     /**
-     * 
-     * @return 
+     *
+     * @return
      */
     public static int getDiaActual() {
         Calendar cal = Calendar.getInstance();
@@ -234,17 +234,18 @@ public class Horario {
     }
 
     /**
-     * 
+     *
      * @param con
      * @param idEmpleado
      * @param tipoEntrada
      * @param idAsignacion
      * @param horario
      * @param estado
-     * @return 
+     * @param tipoHorario 1:signifca que es docente 2:desayuno 3:admon
+     * @return
      */
     public static boolean saveAsistencia(Connection con, int idEmpleado,
-            int tipoEntrada, int idAsignacion, String horario, int estado) {
+            int tipoEntrada, int idAsignacion, String horario, int estado, int tipoHorario) {
         try {
             Date now = new Date();
             SimpleDateFormat fech = new SimpleDateFormat("yyyy-MM-dd");
@@ -265,7 +266,7 @@ public class Horario {
             PreparedStatement pstStatement = con.prepareStatement(query);
             pstStatement.setTime(1, java.sql.Time.valueOf(horario));
             pstStatement.setDate(2, java.sql.Date.valueOf(dateHoy));
-            pstStatement.setInt(3, estado);
+            pstStatement.setInt(3, tipoHorario);
             pstStatement.setInt(4, idEmpleado);
             pstStatement.setInt(5, idAsignacion);
             pstStatement.setInt(6, estado);
@@ -279,11 +280,11 @@ public class Horario {
     }
 
     /**
-     * 
+     *
      * @param con
      * @param horario
      * @param idAsitencia
-     * @return 
+     * @return
      */
     public static boolean updateAsistencia(Connection con, String horario, int idAsitencia) {
         boolean check = false;
@@ -301,22 +302,9 @@ public class Horario {
         }
         return check;
     }
-
-    /**
-     * Este metodo sirve para verificar si ya hay un regitro previo en la tabla
-     * de asistencia en el caso que sea verdadero este se actualiza de lo
-     * contrario este se inserta
-     *
-     * @param con variable de conexion a la BD
-     * @param idEmpleado 
-     * @param tipoEntrada
-     * @param idAsignacion 
-     * @param horario
-     * @param estado 
-     * @return
-     */
-    public static boolean checkAsistencia(Connection con, int idEmpleado,
-            int tipoEntrada, int idAsignacion, String horario, int estado) {
+    
+    public static boolean checkChequeo(Connection con, int idEmpleado,
+             int idAsignacion, int tipoHorario){
         boolean check = false;
         try {
             Date now = new Date();
@@ -324,27 +312,69 @@ public class Horario {
             String dateHoy = fech.format(now);
             //dateHoy = dateHoy + "%";
             String query = "SELECT * FROM asistencia WHERE fecha::text LIKE ? "
-                    + "AND id_empleado=? AND id_asignacion_horario=?";
+                    + "AND id_empleado=? AND id_asignacion_horario=? AND estado=?";
             PreparedStatement pstmt = con.prepareStatement(query);
             pstmt.setString(1, dateHoy);
             pstmt.setInt(2, idEmpleado);
             pstmt.setInt(3, idAsignacion);
+            pstmt.setInt(4, tipoHorario);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+               check = true;
+            } else{ // se hace la insercion
+                check = false;}
+            pstmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return check;
+    }
+
+    /**
+     * Este metodo sirve para verificar si ya hay un regitro previo en la tabla
+     * de asistencia en el caso que sea verdadero este se actualiza de lo
+     * contrario este se inserta
+     *
+     * @param con variable de conexion a la BD
+     * @param idEmpleado
+     * @param tipoEntrada
+     * @param idAsignacion
+     * @param horario
+     * @param estado
+     * @param tipoHorario 1:signifca que es docente 2:desayuno 3:admon
+     * @return
+     */
+    public static boolean checkAsistencia(Connection con, int idEmpleado,
+            int tipoEntrada, int idAsignacion, String horario, int estado, int tipoHorario) {
+        boolean check = false;
+        try {
+            Date now = new Date();
+            SimpleDateFormat fech = new SimpleDateFormat("yyyy-MM-dd");
+            String dateHoy = fech.format(now);
+            //dateHoy = dateHoy + "%";
+            String query = "SELECT * FROM asistencia WHERE fecha::text LIKE ? "
+                    + "AND id_empleado=? AND id_asignacion_horario=? AND estado=?";
+            PreparedStatement pstmt = con.prepareStatement(query);
+            pstmt.setString(1, dateHoy);
+            pstmt.setInt(2, idEmpleado);
+            pstmt.setInt(3, idAsignacion);
+            pstmt.setInt(4, tipoHorario);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
                 // se hace un update
+                //VERIFICAR ESTE METODO
+                //CHECAR FUNCIONALIDAD
                 int idAsistencia = rs.getInt("id");
-                if(updateAsistencia(con, horario, idAsistencia)){
+                if (updateAsistencia(con, horario, idAsistencia)) {
                     check = true;
-                }else{
+                } else {
                     check = false;
                 }
+            } else // se hace la insercion
+            if (saveAsistencia(con, idEmpleado, tipoEntrada, idAsignacion, horario, estado, tipoHorario)) {
+                check = true;
             } else {
-                // se hace la insercion
-                if (saveAsistencia(con, idEmpleado, tipoEntrada, idAsignacion, horario, estado)) {
-                    check = true;
-                }else{
-                    check = false;
-                }
+                check = false;
             }
             pstmt.close();
         } catch (Exception e) {

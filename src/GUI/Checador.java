@@ -35,6 +35,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
+import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
@@ -596,6 +597,7 @@ public class Checador extends javax.swing.JFrame {
         jLabel1 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(exitOnclose());
+        setIconImage(new ImageIcon(getClass().getResource("/Resources/img/ICONOCHECADOR.png")).getImage());
         setPreferredSize(Toolkit.getDefaultToolkit().getScreenSize());
         getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
