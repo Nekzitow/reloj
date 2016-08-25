@@ -720,7 +720,7 @@ public class Checador extends javax.swing.JFrame {
                                 nRes = libScanner.UFS_Extract(hScanner, bTemplate, refTemplateSize, refTemplateQuality);
 
                                 if (nRes == 0) {
-                                    setStatusMsg("save template file template size:" + refTemplateSize.getValue() + " quality:" + refTemplateQuality.getValue());
+                                    //setStatusMsg("save template file template size:" + refTemplateSize.getValue() + " quality:" + refTemplateQuality.getValue());
                                     int tempsize = refTemplateSize.getValue();
                                     System.arraycopy(bTemplate, 0, byteTemplateArray[0], 0, refTemplateSize.getValue());//byte[][]
                                     intTemplateSizeArray[0] = refTemplateSize.getValue();
