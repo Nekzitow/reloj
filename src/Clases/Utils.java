@@ -58,17 +58,27 @@ public class Utils {
         return valor;
     }
 
-    public static boolean evaluarDocente(Connection con, Date comparar1,
+    public static int evaluarDocente(Connection con, Date comparar1,
             Date comparar2, Date comparar3, Horario hora, int idEmpleado, String horario) {
-        boolean valor = false;
-        if (evaluarLimite(comparar1, comparar2, hora.getTiempoAntes() * 60)) {
-            Horario.checkAsistencia(con, idEmpleado, 1, hora.getIdAsignacion(), horario, 2, 1);
-            valor = true;
+        int valor = 0;
+        if (evaluarLimite(comparar1, comparar2, hora.getTiempoAntes() * 60) || evaluarLimite3(comparar1, comparar2)) {
+            if (Horario.checkChequeo(con, idEmpleado, hora.getIdAsignacion(), 1)) {
+               valor = 4;
+            }else{
+                if (evaluarLimite(comparar1, comparar2, hora.getTiempoAntes() * 60)) {
+                    Horario.checkAsistencia(con, idEmpleado, 1, hora.getIdAsignacion(), horario, 2, 1);
+                    valor = 1;
+                }else{                    
+                    Horario.checkAsistencia(con, idEmpleado, 1, hora.getIdAsignacion(), horario, 1, 1);
+                    valor = 2;
+                }
+            }
+            
         } else if (evaluarLimite(comparar1, comparar3, hora.getTiempoDespues() * 60)) {
             Horario.checkAsistencia(con, idEmpleado, 2, hora.getIdAsignacion(), horario, 2, 1);
-            valor = true;
+            valor = 1;
         } else {
-            valor = false;
+            valor = 3;
         }
         return valor;
     }
@@ -110,6 +120,16 @@ public class Utils {
         boolean correcto = false;
         long diferencia = (Math.abs(date1.getTime() - date2.getTime())) / 1000;
         long limit = (5400 * 1000) / 1000L;//limite de tiempo
+        if (diferencia <= limit) {
+            correcto = true;
+        }
+        return correcto;
+    }
+    
+    public static boolean evaluarLimite3(Date date1, Date date2) {
+        boolean correcto = false;
+        long diferencia = (Math.abs(date1.getTime() - date2.getTime())) / 1000;
+        long limit = (900 * 1000) / 1000L;//limite de tiempo
         if (diferencia <= limit) {
             correcto = true;
         }

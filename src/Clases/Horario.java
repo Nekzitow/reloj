@@ -187,6 +187,37 @@ public class Horario {
         }
         return lista;
     }
+    
+    public static ArrayList<Horario> horarioDiaDocente(Connection con,int idEmpleado){
+        Calendar cal = Calendar.getInstance();
+        ArrayList<Horario> lista = new ArrayList<>();
+        try {
+            String query = "SELECT MIN(horario.hora_entrada) AS  hora_entrada, MAX(hora_salida) AS hora_salida,ac.clave_materias,id_grupos,"
+                    + "MIN(id_asignacion_horario) AS id_asignacion,tiempo_antes,tiempo_despues FROM horario " +
+                            "INNER JOIN asignacion_horario AS asig ON  asig.id_horario = horario.id " +
+                            "INNER JOIN asignacion_clase AS ac ON ac.id_asignacion_horario = asig.id " +
+                            "INNER JOIN tipo_horario ON tipo_horario.id = id_tipo_horario " +
+                            "INNER JOIN parametros ON parametros.id = id_parametros "+
+                            "WHERE asig.id_empleado = ?  AND dia=? GROUP BY clave_materias,id_grupos,tiempo_antes,tiempo_despues";
+            PreparedStatement pstmt = con.prepareStatement(query);
+            pstmt.setInt(1, idEmpleado);
+            pstmt.setInt(2, getDiaActual());
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Horario horario = new Horario();
+                horario.setHoraEntrada(rs.getString("hora_entrada"));
+                horario.setHoraSalida(rs.getString("hora_salida"));
+                horario.setTiempoAntes(rs.getInt("tiempo_antes"));
+                horario.setTiempoDespues(rs.getInt("tiempo_despues"));
+                horario.setIdAsignacion(rs.getInt("id_asignacion"));
+                lista.add(horario);
+            }
+            pstmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return lista;
+    }
 
     /**
      *

@@ -241,7 +241,8 @@ public class Checador extends javax.swing.JFrame {
                     } else {
 
                         setStatusMsg("UFM_Create fail!! code :" + nRes);
-
+                        MsgBoxWar("LECTOR NO ENCONTRADO");
+                        System.exit(0);
                         return;
                     }
 
@@ -575,7 +576,9 @@ public class Checador extends javax.swing.JFrame {
     public void MsgBox(String log) {
         JOptionPane.showMessageDialog(null, log);
     }
-
+    public void MsgBoxWar(String log){
+        JOptionPane.showMessageDialog(null, log,"ADVERTENCIA",JOptionPane.WARNING_MESSAGE);
+    }
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -832,10 +835,11 @@ public class Checador extends javax.swing.JFrame {
             //obtenemos la hora de chequeo
             String s = df.format(now);
             //Realizamos la validacion
-            Date comparar1, comparar2, comparar3;
+            Date comparar1, comparar2, comparar3,comparar4, comparar5;
             //hora actual
             comparar1 = df.parse(s);
             boolean valor = false;
+            boolean docenteBool = false;
             for (Horario hora : horas) {
                 //hora1
                 comparar2 = df.parse(hora.getHoraEntrada());
@@ -847,7 +851,38 @@ public class Checador extends javax.swing.JFrame {
                         valor = Utils.evaluarDesayuno(this.con, comparar1, comparar2, comparar3, hora, idEmpleado, s);
                         break;
                     case 1:
-                        valor = Utils.evaluarDocente(this.con, comparar1, comparar2, comparar3, hora, idEmpleado, s);
+                        //obtenemos la lista de horarios reales del docente
+                        docenteBool = true;
+                        ArrayList<Horario> horarioD = Horario.horarioDiaDocente(con, idEmpleado);
+                        for (Horario horaD : horarioD) {
+                            //hora1
+                            comparar4 = df.parse(horaD.getHoraEntrada());
+                            //hora2
+                            comparar5 = df.parse(horaD.getHoraSalida());
+                            int valorD = Utils.evaluarDocente(this.con, comparar1, comparar4, comparar5, horaD, idEmpleado, s);
+                            switch (valorD){
+                                case 1:
+                                    Modelo.addRow(new Object[]{s, "A TIEMPO"});
+                                    valor = true;
+                                    break;
+                                case 2:
+                                    Modelo.addRow(new Object[]{s, "RETARDO"});
+                                    valor = true;
+                                    break;
+                                case 3:
+                                    Modelo.addRow(new Object[]{s, "FUERA DE TIEMPO"});
+                                    valor = true;
+                                    break;
+                                case 4:
+                                    Modelo.addRow(new Object[]{s, "YA REGISTRADO"});
+                                    valor = true;
+                                    break;
+                            }
+                            if (valor) {
+                                break;
+                            }
+                        }
+                        
                         break;
                     default:
                         valor = Utils.evaluarAdmon(this.con, comparar1, comparar2, comparar3, hora, idEmpleado, s);
@@ -858,9 +893,9 @@ public class Checador extends javax.swing.JFrame {
                 }
 
             }
-            if (valor) {
+            if (valor && !docenteBool) {
                 Modelo.addRow(new Object[]{s, "A TIEMPO"});
-            } else {
+            } else if(!docenteBool){
                 Modelo.addRow(new Object[]{s, "FUERA DE TIEMPO"});
             }
         } catch (Exception e) {
