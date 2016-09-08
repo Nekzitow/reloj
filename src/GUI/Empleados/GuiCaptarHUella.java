@@ -11,6 +11,7 @@ import Clases.Empleado;
 import Clases.Puesto;
 import Clases.UFMatcherClass;
 import Clases.UFScannerClass;
+import Clases.Utils;
 import GUI.Principal;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
@@ -47,7 +48,7 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
     private ImagePanel imgPanel = null;
     public int nC = 0;
     private UFScannerClass libScanner = null;
-
+    private final String BASE_URL = Utils.leerBASEURL("config.ini");
     private UFMatcherClass libMatcher = null;
 
     private int nInitFlag = 0;
@@ -81,7 +82,7 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
     /**
      * Creates new form GuiCaptarHUella
      */
-    public GuiCaptarHUella(Connection con, Empleado empleado,Principal p) {
+    public GuiCaptarHUella(Connection con, Empleado empleado, Principal p) {
         initComponents();
         this.con = con;
         this.empleado = empleado;
@@ -92,7 +93,7 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
         this.addInternalFrameListener(new InternalFrameListener() {
             @Override
             public void internalFrameOpened(InternalFrameEvent e) {
-                
+
             }
 
             @Override
@@ -107,22 +108,22 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
 
             @Override
             public void internalFrameIconified(InternalFrameEvent e) {
-                
+
             }
 
             @Override
             public void internalFrameDeiconified(InternalFrameEvent e) {
-                
+
             }
 
             @Override
             public void internalFrameActivated(InternalFrameEvent e) {
-                
+
             }
 
             @Override
             public void internalFrameDeactivated(InternalFrameEvent e) {
-                
+
             }
         });
     }
@@ -453,6 +454,7 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
         guardar = new javax.swing.JButton();
         jPanel3 = getImagePanel();
         mensajes = new javax.swing.JLabel();
+        jToggleButton1 = new javax.swing.JToggleButton();
 
         setClosable(true);
 
@@ -552,6 +554,13 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
             .addGap(0, 122, Short.MAX_VALUE)
         );
 
+        jToggleButton1.setText("Tomar Foto");
+        jToggleButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jToggleButton1ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
@@ -562,7 +571,9 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
                     .addComponent(captura, javax.swing.GroupLayout.DEFAULT_SIZE, 158, Short.MAX_VALUE)
                     .addComponent(verifica, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(guardar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap(193, Short.MAX_VALUE))
+                .addGap(18, 18, 18)
+                .addComponent(jToggleButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 160, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(15, Short.MAX_VALUE))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(mensajes, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -578,7 +589,9 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
                         .addGap(38, 38, 38)
                         .addComponent(mensajes, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(74, 74, 74)
-                .addComponent(captura, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(captura, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jToggleButton1))
                 .addGap(18, 18, 18)
                 .addComponent(verifica)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
@@ -784,6 +797,16 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
             }
         }
     }//GEN-LAST:event_guardarActionPerformed
+
+    private void jToggleButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton1ActionPerformed
+        // TODO add your handling code here:
+        String direccion = BASE_URL + "modules/personal/foto/"+this.empleado.getId();
+        try {
+            Runtime.getRuntime().exec("rundll32 url.dll,FileProtocolHandler " + direccion);
+        } catch (Exception err) {
+            JOptionPane.showMessageDialog(null, "Error: " + err);
+        }
+    }//GEN-LAST:event_jToggleButton1ActionPerformed
     public int CaptureSingle() {
 
         int nRes = 0;
@@ -861,6 +884,7 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
         }
 
     }
+
     public int testCallScanProcCallback() {
         int nRes = 0;
 
@@ -982,8 +1006,8 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
             MsgBox("Error al !!");
         }
     }
-    
-    public void ModuleEmpleado(){
+
+    public void ModuleEmpleado() {
         Empleados emp = new Empleados(this.con, this.principal);
         this.principal.jDesktopPane1.add(emp);
         emp.show();
@@ -999,6 +1023,7 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
+    private javax.swing.JToggleButton jToggleButton1;
     private javax.swing.JLabel mensajes;
     private javax.swing.JLabel nombre;
     private javax.swing.JButton verifica;
