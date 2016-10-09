@@ -166,4 +166,16 @@ public class Utils {
             return null;
         }
     }
+
+    public static boolean validarVacios(String[] data){
+        boolean response = false;
+        for(int i=0; i<data.length;i++){
+            if (data[i].trim().isEmpty()) {
+                response = true;
+                break;
+            }
+        }
+        return response;
+        
+    }
 }

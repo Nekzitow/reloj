@@ -34,7 +34,7 @@ public class Controladores {
             // Create a ZipInputStream to read the zip file
             BufferedOutputStream dest = null;
 
-            FileInputStream fis = new FileInputStream("C:\\desarrollo\\BioMiniAppletIdenty\\src\\biominiapplet\\BioMiniLib.zip");
+            FileInputStream fis = new FileInputStream("C:\\BioMiniLib.zip");
             //InputStream fis = getClass().getResourceAsStream("BioMiniLib.zip");
 
             ZipInputStream zis = new ZipInputStream(new BufferedInputStream(fis));

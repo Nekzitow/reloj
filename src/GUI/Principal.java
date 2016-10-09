@@ -98,9 +98,9 @@ public class Principal extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
-        Empleados emp = new Empleados(this.con, this);
+        /*Empleados emp = new Empleados(this.con, this);
         jDesktopPane1.add(emp);
-        emp.show();
+        emp.show();*/
     }//GEN-LAST:event_jMenuItem1ActionPerformed
 
     /**

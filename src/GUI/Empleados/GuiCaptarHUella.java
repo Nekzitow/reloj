@@ -12,6 +12,7 @@ import Clases.Puesto;
 import Clases.UFMatcherClass;
 import Clases.UFScannerClass;
 import Clases.Utils;
+import GUI.FramePrincipal;
 import GUI.Principal;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
@@ -44,7 +45,7 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
     private int nScannerNumber = 0;
     public Connection con;
     public Empleado empleado;
-    public Principal principal;
+    public FramePrincipal principal;
     private ImagePanel imgPanel = null;
     public int nC = 0;
     private UFScannerClass libScanner = null;
@@ -82,7 +83,7 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
     /**
      * Creates new form GuiCaptarHUella
      */
-    public GuiCaptarHUella(Connection con, Empleado empleado, Principal p) {
+    public GuiCaptarHUella(Connection con, Empleado empleado, FramePrincipal p) {
         initComponents();
         this.con = con;
         this.empleado = empleado;
@@ -142,7 +143,7 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
         }
         if (nInitFlag != 0) {
 
-            MsgBox("already init..");
+            //MsgBox("already init..");
 
             return;
         }
@@ -155,8 +156,8 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
             libMatcher = (UFMatcherClass) Native.loadLibrary("UFMatcher", UFMatcherClass.class);
         } catch (Exception ex) {
 
-            setStatusMsg("loadLlibrary : UFScanner,UFMatcher fail!!");
-            MsgBox("loadLlibrary : UFScanner,UFMatcher fail!!");
+            //setStatusMsg("loadLlibrary : UFScanner,UFMatcher fail!!");
+            MsgBox("PROBLEMAS AL CARGAR LAS LIBRERIAS : UFScanner,UFMatcher!!");
 
             return;
         }
@@ -166,66 +167,44 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
 
         if (nRes == 0) {
 
-            System.out.println("UFS_Init() success!!");
-
             nInitFlag = 1;
 
-            //MsgBox("Scanner Init success!!");
             nRes = testCallScanProcCallback();
 
             if (nRes == 0) {
-
-                setStatusMsg("==>UFS_SetScannerCallback pScanProc ...");
-
                 IntByReference refNumber = new IntByReference();
                 nRes = libScanner.UFS_GetScannerNumber(refNumber);
 
                 if (nRes == 0) {
                     nScannerNumber = refNumber.getValue();
-                    setStatusMsg("UFS_GetScannerNumber() scanner number :" + nScannerNumber);
-
                     PointerByReference refMatcher = new PointerByReference();
-
                     nRes = libMatcher.UFM_Create(refMatcher);
-
                     if (nRes == 0) {
 
                         UpdateScannerList(); //list upate ==> getcurrentscannerhandle�� list�� ������//
-                        System.out.println("after upadtelist");
                         initVariable(1);
-                        System.out.println("after initVariable");
                         initArray(100, 1024); //array size,template size
-
                         hMatcher = refMatcher.getValue();
-
                         IntByReference refValue = new IntByReference();
                         IntByReference refFastMode = new IntByReference();
-
-                        //security level (1~7)
                         nRes = libMatcher.UFM_GetParameter(hMatcher, 302, refValue); //302 : security level :UFM_
-
                         if (nRes == 0) {
                             nSecurityLevel = refValue.getValue();//
-                            setStatusMsg("get security level,302(security) value is " + refValue.getValue());
                         } else {
-                            setStatusMsg("get security level fail! code: " + nRes);
-                            MsgBox("get security level fail! code: " + nRes);
+                            //MsgBox("get security level fail! code: " + nRes);
                         }
 
                         //fast mode
                         nRes = libMatcher.UFM_SetParameter(hMatcher, libMatcher.UFM_PARAM_FAST_MODE, refFastMode);
                         if (nRes == 0) {
                             nFastMode = refFastMode.getValue();
-                            setStatusMsg("get fastmode,301(fastmode) value is " + refFastMode.getValue());
+                            //setStatusMsg("get fastmode,301(fastmode) value is " + refFastMode.getValue());
                             //MsgBox("get fastmode,301(fastmode) value is "+refFastMode.getValue());
                         } else {
-                            setStatusMsg("get fastmode value fail! code: " + nRes);
-                            MsgBox("get fastmode value fail! code: " + nRes);
+//                            setStatusMsg("get fastmode value fail! code: " + nRes);
+//                            MsgBox("get fastmode value fail! code: " + nRes);
                         }
-                        if (nFastMode == 1) {
-
-                        }
-
+                        
                         int nSelectedIdx = 0;
 
                         if (hMatcher != null) {
@@ -248,21 +227,21 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
 
                     } else {
 
-                        setStatusMsg("UFM_Create fail!! code :" + nRes);
+                        //setStatusMsg("UFM_Create falló!! code :" + nRes);
 
                         return;
                     }
 
                 } else {
-                    MsgBox("GetScannerNumber fail!! code :" + nRes);
-                    setStatusMsg("GetScannerNumber fail!! code :" + nRes);
+                    MsgBox("No se encontraron scanners!! code :" + nRes);
+                    //setStatusMsg("GetScannerNumber fail!! code :" + nRes);
                     return;
 
                 }
 
             } else {
 
-                setStatusMsg("UFS_SetScannerCallback() fail,code :" + nRes);
+                //setStatusMsg("UFS_SetScannerCallback() fail,code :" + nRes);
 
             }
 
@@ -270,8 +249,8 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
 
         if (nRes != 0) {
             System.out.println("Init() fail!!");
-            setStatusMsg("Init fail!! return code:" + nRes);
-            MsgBox("Scanner Init fail!!");
+            //setStatusMsg("Init fail!! return code:" + nRes);
+            MsgBox("Error a inicializar el lector");
         }
 
     }
@@ -315,7 +294,7 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
 
         int nRes = libScanner.UFS_SetParameter(hScanner, libScanner.UFS_PARAM_TIMEOUT, pValue);
         if (nRes == 0) {
-            setStatusMsg("Change combox-timeout,201(timeout) value is " + pValue.getValue());
+            //setStatusMsg("Change combox-timeout,201(timeout) value is " + pValue.getValue());
         } else {
             setStatusMsg("Change combox-timeout,change parameter value fail! code: " + nRes);
         }
@@ -323,7 +302,7 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
         pValue.setValue(100);
         nRes = libScanner.UFS_SetParameter(hScanner, libScanner.UFS_PARAM_BRIGHTNESS, pValue);
         if (nRes == 0) {
-            setStatusMsg("Change combox-brightness,202 value is " + pValue.getValue());
+            //setStatusMsg("Change combox-brightness,202 value is " + pValue.getValue());
         } else {
             setStatusMsg("Change combox-brightness,change parameter value fail! code: " + nRes);
         }
@@ -331,7 +310,7 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
         pValue.setValue(7);
         nRes = libScanner.UFS_SetParameter(hScanner, libScanner.UFS_PARAM_SENSITIVITY, pValue);
         if (nRes == 0) {
-            setStatusMsg("Change combox-detect_fake,312(fake detect) value is " + pValue.getValue());
+            //setStatusMsg("Change combox-detect_fake,312(fake detect) value is " + pValue.getValue());
         } else {
             setStatusMsg("Change combox-detect_fake,change parameter value fail! code: " + nRes);
         }
@@ -339,14 +318,14 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
         pValue.setValue(7);
         nRes = libScanner.UFS_SetParameter(hScanner, libScanner.UFS_PARAM_SENSITIVITY, pValue);
         if (nRes == 0) {
-            setStatusMsg("Change combox-sensitivity,203 value is " + pValue.getValue());
+            //setStatusMsg("Change combox-sensitivity,203 value is " + pValue.getValue());
         } else {
             setStatusMsg("Change combox-sensitivity,change parameter value fail! code: " + nRes);
         }
 
         nRes = libScanner.UFS_SetTemplateType(hScanner, libScanner.UFS_TEMPLATE_TYPE_SUPREMA); //2001 Suprema type
         if (nRes == 0) {
-            setStatusMsg("Change combox-Scan TemplateType:2001");
+            //setStatusMsg("Change combox-Scan TemplateType:2001");
         } else {
             setStatusMsg("Change combox-Scan TemplateType,change parameter value fail! code: " + nRes);
         }
@@ -457,6 +436,7 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
         jToggleButton1 = new javax.swing.JToggleButton();
 
         setClosable(true);
+        setPreferredSize(new java.awt.Dimension(1060, 490));
 
         jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Detalles del Empleado"));
 
@@ -514,7 +494,7 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel4)
                     .addComponent(jLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(111, Short.MAX_VALUE))
         );
 
         jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Captura Huella"));
@@ -565,20 +545,21 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addGap(82, 82, 82)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(captura, javax.swing.GroupLayout.DEFAULT_SIZE, 158, Short.MAX_VALUE)
-                    .addComponent(verifica, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(guardar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(18, 18, 18)
-                .addComponent(jToggleButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 160, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(15, Short.MAX_VALUE))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(mensajes, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
+                .addContainerGap(70, Short.MAX_VALUE)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(guardar, javax.swing.GroupLayout.PREFERRED_SIZE, 158, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(verifica, javax.swing.GroupLayout.PREFERRED_SIZE, 158, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addComponent(captura, javax.swing.GroupLayout.PREFERRED_SIZE, 158, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(39, 39, 39)
+                        .addComponent(jToggleButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 160, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap())
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -588,15 +569,15 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addGap(38, 38, 38)
                         .addComponent(mensajes, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addGap(74, 74, 74)
+                .addGap(18, 18, 18)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(captura, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jToggleButton1))
+                    .addComponent(jToggleButton1)
+                    .addComponent(captura, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addComponent(verifica)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(guardar)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(33, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -611,10 +592,10 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap(97, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(0, 22, Short.MAX_VALUE))
         );
 
         pack();
@@ -972,23 +953,7 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
         public int callback(Pointer hScanner, int bFingerOn, Pointer pImage, int nWidth, int nHeight, int nResolution, PointerByReference pParam) {
             nC++;
 
-            /*
-			System.out.println(nC+"==========================================");  //
-			System.out.println("==>captureProc calle scanner:"+hScanner);  //  
-			System.out.println(" fingerOn:"+bFingerOn);  //  
-			System.out.println("width: "+nWidth);
-			System.out.println("height: "+nHeight);
-			System.out.println("resolution: "+nResolution);
-			System.out.println("void * pParam  value is "+pParam.getValue());
-			System.out.println(nC+"==========================================");  //
-             */
             drawCurrentFingerImage();
-
-            /*
-			jFingerInfo.setText("");
-			jFingerInfo.setText("width:"+nWidth + " height:"+nHeight+" resolution:"+nResolution);
-             */
-            //MsgBox("call"+nC); //exception error==> SDK work thread(UFS_Capture_Thread) while loop �� try ,catch  
             return 1;
 
         }
@@ -996,15 +961,13 @@ public class GuiCaptarHUella extends javax.swing.JInternalFrame {
 
     public void unInit() {
         System.out.println("actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
-
+        
         int nRes = libScanner.UFS_Uninit();
-
+        System.out.println(nRes);
         if (nRes == 0) {
             nRes = libMatcher.UFM_Delete(hMatcher);
             nInitFlag = 0;
-        } else {
-            MsgBox("Error al !!");
-        }
+        } else { }
     }
 
     public void ModuleEmpleado() {

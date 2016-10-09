@@ -746,7 +746,7 @@ public class Checador extends javax.swing.JFrame {
                                                         jLabel4.setText("");
                                                         jLabel4.setText(emp.getNombre().toUpperCase() + " " + emp.getApellidos().toUpperCase());
                                                         mensajes.setForeground(new java.awt.Color(94, 173, 56));
-                                                        setStatusMsg("NO CUENTAS CON UNA HORARIO ASIGNADO");
+                                                        setStatusMsg("NO CUENTAS CON UN HORARIO ASIGNADO");
                                                     }
                                                     
                                                     
